@@ -165,3 +165,7 @@ cython_debug/
 # presentation internals
 src/
 *.key
+minio/
+data*/
+archive.zip
+breweries.csv
