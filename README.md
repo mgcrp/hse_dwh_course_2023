@@ -5,7 +5,7 @@
 https://t.me/+n-2dgcnojw4yOTli
 
 Таблица с оценками:<br>
-TBD
+https://docs.google.com/spreadsheets/d/1Q1Hcv6P-XE-wWJs1WNRxCixUgGR4opFCt7vV2L8B-0A/edit?usp=sharing
 
 Формула оценивания:
 ```math
