@@ -104,7 +104,8 @@ sources:
     - изобретаем макрос, чтобы сделать схему красивую
         - дефолтный макрос - https://docs.getdbt.com/docs/build/custom-schemas
         - `touch /macros/generate_schema_name.sql`
-        - ```html
+        - Содержание файла
+```html
 {% macro generate_schema_name(custom_schema_name, node) -%}
 
     {%- set default_schema = target.schema -%}
@@ -119,14 +120,15 @@ sources:
     {%- endif -%}
 
 {%- endmacro %}
-        ```
+```
     - `dbt run`
 
 10) Создадим новую таблицу
     - `cd /models`
     - `mkdir presentation`
     - `touch presentation__gmv_by_store_category.sql`
-    - ```html
+    - Содержание файла
+```html
 {{ config(materialized='table', schema='presentation') }}
 
 with final as (
@@ -152,7 +154,7 @@ select * from final
     presentation:
       +materialized: table
       +schema: dbt_presentation
-    ```
+```
     - `dbt run`
 
 11) Можно писать и гонять тесты на колонках - `dbt test`
@@ -173,13 +175,14 @@ Cтатическая инфа, которая меняется редко
 Кладется в формате csv в папку seeds в проекте
     - `cd seeds`
     - `touch dict_cities.csv`
-    - ```csv
+    - Содержание файла
+```csv
 id, name, code
 1, Moscow, MSK
 2, Saint-Peterburg, SPB
 3, Ekaterinburg, EKB
 4, Novosibirsk, NSK
-    ```
+```
     - `dbt seed`
 
 14) Автодока (только если вы писали описания для полей)
@@ -189,11 +192,12 @@ id, name, code
 15) Существует много сторонних packages с наборами макросов
     - https://hub.getdbt.com
     - touch packages.yml
-    - ```
+    - Содержание файла
+```
 packages:
   - package: dbt-labs/dbt_utils
     version: 1.1.1
-    ```
+```
     - dbt deps
     - Файлы packages лежат в директории dbt_packages
 
