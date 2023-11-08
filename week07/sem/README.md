@@ -2,7 +2,7 @@
 
 #### 1 - Advanced AirFlow pipelines
 
-1) Активируем БД<br>
+1) Активируем БД (используем базу из вашей первой ДЗ)<br>
 `sh demo_db/docker-init.sh`
 
 2) Активируем Airflow<br>
