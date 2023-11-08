@@ -1,63 +1,74 @@
 ### План семинара
 
-1) Активируем БД
+#### 1 - Advanced AirFlow pipelines
+
+1) Активируем БД<br>
 `sh demo_db/docker-init.sh`
 
-2) Активируем Airflow
+2) Активируем Airflow<br>
 `cd demo_airflow && docker-compose up -d`
 
-3) Добавим connection
-host: host.docker.internal
-port: 5432
-user: postgres
-pass: postgres
-db: postgres
+3) Добавим connection в AirFlow<br>
+Тип подключения - PostgreSQL<br>
+host: `host.docker.internal`<br>
+port: `5432`<br>
+user: `postgres`<br>
+pass: `***`<br>
+db: `postgres`<br>
 
-4) Давайте напишем простой DAG с sqlOperator
-demo_airflow/dags/dag_demoSql.py
-Сначала убрать .strptime , чтобы показать, как работают ошибки
-Потом добавить и показать, что все отработало
-Показать https://airflow.apache.org/docs/apache-airflow/stable/templates-ref.html
+4) Давайте напишем простой DAG с sqlOperator<br>
+demo_airflow/dags/dag_demoSql.py<br>
+Список параметров, которые мы можем подставлять через Jinja в AirFlow https://airflow.apache.org/docs/apache-airflow/stable/templates-ref.html
 
-5) Показать DAG с sqlSensor
+5) DAG с sqlSensor <br>
 demo_airflow/dags/dag_demoSqlSensor.py
 
-6) Показать DAG с pythonOperator
- - Кладем токен в секреты
-   host: https://api.telegram.org/bot
-   user: hse_dwh_course_bot
-   pass: 6777899526:AAF1QjMBKHYfQmg-VXh9IsTgtuQ105d4OYw
- - demo_airflow/dags/dag_demoPython.py
+6) DAG с pythonOperator<br>
+    - Кладем токен в секреты<br>
+        host: `https://api.telegram.org/bot`<br>
+        user: `hse_dwh_course_bot`<br>
+        pass: `***`
+    - demo_airflow/dags/dag_demoPython.py
 
-7) Показать OnFailureCallback
+7) DAG с OnFailureCallback<br>
 demo_airflow/dags/dag_demoOnFailureCallback.py
 
----
+#### 2 - dbt
 
-1) Ставим dbt
+1) Ставим dbt<br>
+```bash
 pip3 install dbt
 pip3 install dbt-postgres
+```
 
-2) Создаем проект
-dbt init demo_dbt
+2) Создаем проект<br>
+`dbt init demo_dbt`
 
-3) Настраиваем profiles.yml
-Показываем https://docs.getdbt.com/docs/core/connect-data-platform/postgres-setup
+3) Настраиваем profiles.yml<br>
+Он лежит либо в `/Users/<username>/.dbt/profiles.yml`, либо может быть переопределен в директории проекта<br>
+Для референса смотрим https://docs.getdbt.com/docs/core/connect-data-platform/postgres-setup
 
-4) Настраиваем dbt_project.yml
-project postgres
-+schema: dbt_example
+4) Настраиваем dbt_project.yml<br>
+    - Меняем profile (если у вас свой и вы не меняли профайл проекта в прошлом шаге)
+    - Указываем схему для моделей в папке example:<br>
+    `+schema: dbt_example`
 
-5) Проверяем подключение через dbt debug
+5) Проверяем подключение<br>
+`dbt debug`
 
-6) Смотрим на стандартные примеры - dbt run
+6) Запускаем стандартные примеры<br>
+`dbt run`
 
-7) Добавим в систему source - сырые таблицы
+7) Добавим в систему source - таблицы из нашей БД<br>
+1)
+```bash
 cd models
 mkdir raw
 cd raw
 touch schema.yml
 ```
+2)
+```yaml
 version: 2
 
 sources:
@@ -82,19 +93,21 @@ sources:
       - name: purchases
       - name: stores
 ```
-dbt run
+3)
+`dbt run`
 
-8) /target/compiled - расписанное в .sql без jinja
+8) В директории `/target/compiled` - сгенерированные файлы .sql без jinja
 
-9) Нам не нравится, что оно пишет в кривую схему
-    - на уровне таблицы
-      {{ config(materialized='table', schema='staging') }}
+9) Нам не нравится, что оно пишет в кривую схему<br>
+Как можно задать схему для модели:
+    - В файле модели
+      `{{ config(materialized='table', schema='staging') }}`
     - на уровне проекта (dbt_project.yml)
-      +schema: staging
-    - изобретаем макрос
-        - показываем https://docs.getdbt.com/docs/build/custom-schemas
-        - touch /macros/generate_schema_name.sql
-        - ```
+      `+schema: staging`
+    - изобретаем макрос, чтобы сделать схему красивую
+        - дефолтный макрос - https://docs.getdbt.com/docs/build/custom-schemas
+        - `touch /macros/generate_schema_name.sql`
+        - ```html
 {% macro generate_schema_name(custom_schema_name, node) -%}
 
     {%- set default_schema = target.schema -%}
@@ -104,19 +117,21 @@ dbt run
 
     {%- else -%}
 
-        {{ default_schema }}_{{ custom_schema_name | trim }}
+        {{ custom_schema_name | trim }}
 
     {%- endif -%}
 
 {%- endmacro %}
         ```
-dbt run
+    - `dbt run`
 
 10) Создадим новую таблицу
-    - cd /models
-    - mkdir presentation
-    - touch presentation__gmv_by_store_category.sql
-    - ```
+    - `cd /models`
+    - `mkdir presentation`
+    - `touch presentation__gmv_by_store_category.sql`
+    - ```html
+{{ config(materialized='table', schema='presentation') }}
+
 with final as (
     SELECT
         pu.store_id,
@@ -141,46 +156,41 @@ select * from final
       +materialized: table
       +schema: dbt_presentation
     ```
-    - dbt run
+    - `dbt run`
 
-11) dbt test
-Тесты пишутся в schema.yml
-Смотрим на тесты на примере
-Скомпилированные тесты пишутся в /target/compiled/.../models/example/schema.yml
+11) Можно писать и гонять тесты на колонках - `dbt test`
+    - Какие тесты гонять - пишется в schema.yml
+    - Примеры тестов есть в example
+    - Скомпилированные тесты пишутся в /target/compiled/.../models/example/schema.yml
 
-12) Материализации
+12) Материализации:
     - table
     - view
     - incremental
     - ephemeral
-Дефолтный - view
-Можно на уровне проекта, можно в каждой таблице отдельно
+Дефолтный тип - view<br>
+Можно менять на уровне проекта, можно в каждой таблице отдельно
 
-13) seeds
-статическая инфа, которая меняется редко
-кладется в формате csv в seeds
-    - cd seeds
-    - touch dict_cities.csv
-    - ```
+13) `dbt seeds`
+Cтатическая инфа, которая меняется редко
+Кладется в формате csv в папку seeds в проекте
+    - `cd seeds`
+    - `touch dict_cities.csv`
+    - ```csv
 id, name, code
 1, Moscow, MSK
 2, Saint-Peterburg, SPB
 3, Ekaterinburg, EKB
 4, Novosibirsk, NSK
     ```
-    - dbt seed
+    - `dbt seed`
 
-14) Автодока
-dbt docs generate
-dbt docs serve --port 1111
+14) Автодока (только если вы писали описания для полей)
+    - `dbt docs generate`
+    - `dbt docs serve --port 1111`
 
-15) существуют дофига packages
-    - показать https://hub.getdbt.com
-    - создать в проекте packages.yml
-    - прописать
-    - dbt deps
-    - лежит в dbt_packages
-
+15) Существует много сторонних packages с наборами макросов
+    - https://hub.getdbt.com
     - touch packages.yml
     - ```
 packages:
@@ -188,10 +198,10 @@ packages:
     version: 1.1.1
     ```
     - dbt deps
+    - Файлы packages лежат в директории dbt_packages
 
-16) свой тест
-test_is_moscow.sql
-```
+16) Пишем свой тест `test_is_moscow.sql`<br>
+```html
 {% macro test_is_moscow(model, column_name) %}
 
 with validation as (
@@ -207,21 +217,108 @@ validation_errors as (
 select count(*)
 from validation_errors
 ```
+    - Потом его можно включить в schema.yml (тест будет называться `is_moscow`)
 
-17) свой ref
+#### 3 - Automate DV
 
----
+1) Датасет - https://www.tpc.org/tpch/
+2) Документация - https://automate-dv.readthedocs.io/en/v0.8.3/
+3) Инит датасета на базе
+```sql
+create schema tpch;
 
-dbt vault
+CREATE TABLE tpch.customer
+(C_CUSTKEY INT,
+ C_NAME VARCHAR(25),
+ C_ADDRESS VARCHAR(40),
+ C_NATIONKEY INTEGER,
+ C_PHONE CHAR(15),
+ C_ACCTBAL DECIMAL(15,2),
+ C_MKTSEGMENT CHAR(10),
+ C_COMMENT VARCHAR(117));
 
+CREATE TABLE tpch.lineitem
+(L_ORDERKEY BIGINT,
+ L_PARTKEY INT,
+ L_SUPPKEY INT,
+ L_LINENUMBER INTEGER,
+ L_QUANTITY DECIMAL(15,2),
+ L_EXTENDEDPRICE DECIMAL(15,2),
+ L_DISCOUNT DECIMAL(15,2),
+ L_TAX DECIMAL(15,2),
+ L_RETURNFLAG CHAR(1),
+ L_LINESTATUS CHAR(1),
+ L_SHIPDATE DATE,
+ L_COMMITDATE DATE,
+ L_RECEIPTDATE DATE,
+ L_SHIPINSTRUCT CHAR(25),
+ L_SHIPMODE CHAR(10),
+ L_COMMENT VARCHAR(44));
+
+CREATE TABLE tpch.nation
+(N_NATIONKEY INTEGER,
+ N_NAME CHAR(25),
+ N_REGIONKEY INTEGER,
+ N_COMMENT VARCHAR(152));
+
+CREATE TABLE tpch.orders
+(O_ORDERKEY BIGINT,
+ O_CUSTKEY INT,
+ O_ORDERSTATUS CHAR(1),
+ O_TOTALPRICE DECIMAL(15,2),
+ O_ORDERDATE DATE,
+ O_ORDERPRIORITY CHAR(15),
+ O_CLERK  CHAR(15),
+ O_SHIPPRIORITY INTEGER,
+ O_COMMENT VARCHAR(79));
+
+CREATE TABLE tpch.part
+(P_PARTKEY INT,
+ P_NAME VARCHAR(55),
+ P_MFGR CHAR(25),
+ P_BRAND CHAR(10),
+ P_TYPE VARCHAR(25),
+ P_SIZE INTEGER,
+ P_CONTAINER CHAR(10),
+ P_RETAILPRICE DECIMAL(15,2),
+ P_COMMENT VARCHAR(23));
+
+CREATE TABLE tpch.partsupp
+(PS_PARTKEY INT,
+ PS_SUPPKEY INT,
+ PS_AVAILQTY INTEGER,
+ PS_SUPPLYCOST DECIMAL(15,2),
+ PS_COMMENT VARCHAR(199));
+
+CREATE TABLE tpch.region
+(R_REGIONKEY INTEGER,
+ R_NAME CHAR(25),
+ R_COMMENT VARCHAR(152));
+
+CREATE TABLE tpch.supplier
+(S_SUPPKEY INT,
+ S_NAME CHAR(25),
+ S_ADDRESS VARCHAR(40),
+ S_NATIONKEY INTEGER,
+ S_PHONE CHAR(15),
+ S_ACCTBAL DECIMAL(15,2),
+ S_COMMENT VARCHAR(101));
+
+copy tpch.customer from  '/var/lib/postgresql/data/src/customer.csv' WITH (FORMAT csv, DELIMITER '|');
+copy tpch.lineitem from  '/var/lib/postgresql/data/src/lineitem.csv' WITH (FORMAT csv, DELIMITER '|');
+copy tpch.nation from  '/var/lib/postgresql/data/src/nation.csv' WITH (FORMAT csv, DELIMITER '|');
+copy tpch.orders from  '/var/lib/postgresql/data/src/orders.csv' WITH (FORMAT csv, DELIMITER '|');
+copy tpch.part from  '/var/lib/postgresql/data/src/part.csv' WITH (FORMAT csv, DELIMITER '|');
+copy tpch.partsupp from  '/var/lib/postgresql/data/src/partsupp.csv' WITH (FORMAT csv, DELIMITER '|');
+copy tpch.region from  '/var/lib/postgresql/data/src/region.csv' WITH (FORMAT csv, DELIMITER '|');
+copy tpch.supplier from  '/var/lib/postgresql/data/src/supplier.csv' WITH (FORMAT csv, DELIMITER '|');
+```
+4)
+```bash
 dbt run -m tag:raw
 dbt run -m tag:stage
 dbt run -m tag:hub
 dbt run -m tag:link
 dbt run -m tag:satellite
 dbt run -m tag:t_link
-
-# dbt_profiles.yml
-
-vars:
-  load_date: '1992-01-08' # increment by one day '1992-01-09'
+```
