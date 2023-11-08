@@ -60,14 +60,12 @@ pip3 install dbt-postgres
 `dbt run`
 
 7) Добавим в систему source - таблицы из нашей БД<br>
-1)
 ```bash
 cd models
 mkdir raw
 cd raw
 touch schema.yml
 ```
-2)
 ```yaml
 version: 2
 
@@ -93,7 +91,6 @@ sources:
       - name: purchases
       - name: stores
 ```
-3)
 `dbt run`
 
 8) В директории `/target/compiled` - сгенерированные файлы .sql без jinja
