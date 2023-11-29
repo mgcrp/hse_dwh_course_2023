@@ -66,3 +66,8 @@ scrape_configs:
 - `docker pull metabase/metabase:latest`
 - `docker run -d -p 12345:3000 --name metabase metabase/metabase`
 - Остальное - справится даже ребенок
+
+#### 5) Tableau
+
+- https://public.tableau.com/app/profile/brian.moore7221/viz/RubiksCube/RubiksCube
+- https://public.tableau.com/app/discover
